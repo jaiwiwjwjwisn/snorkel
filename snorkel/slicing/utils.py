@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List  # Importing necessary types
 
 import numpy as np
 import torch
@@ -15,15 +15,17 @@ from .modules.slice_combiner import SliceCombinerModule
 def add_slice_labels(
     dataloader: DictDataLoader, base_task: Task, S: np.recarray
 ) -> None:
-    """Modify a dataloader in-place, adding labels for slice tasks.
+    """  # Modify a dataloader in-place, adding labels for slice tasks.
+
+    This function modifies the dataloader's dataset.Y_dict attribute in place.
 
     Parameters
     ----------
-    dataloader
+    dataloader:
         A DictDataLoader whose dataset.Y_dict attribute will be modified in place
-    base_task
+    base_task:
        The Task for which we want corresponding slice tasks/labels
-    S
+    S:
         A recarray (output of SFApplier) containing data fields with slice
         indicator information
     """
@@ -34,18 +36,18 @@ def add_slice_labels(
             [S], names=[("base")], data=[np.ones(S.shape)], asrecarray=True
         )
 
-    slice_names = S.dtype.names
+    slice_names = S.dtype.names  # Get slice names from the recarray
 
-    Y_dict: Dict[str, torch.Tensor] = dataloader.dataset.Y_dict  # type: ignore
-    labels = Y_dict[base_task.name]
+    Y_dict: Dict[str, torch.Tensor] = dataloader.dataset.Y_dict  # type: ignore  # Get Y_dict from dataloader
+    labels = Y_dict[base_task.name]  # Get labels for the base task
 
     for slice_name in slice_names:
         # Gather ind labels
-        ind_labels = torch.LongTensor(S[slice_name])  # type: ignore
+        ind_labels = torch.LongTensor(S[slice_name])  # type: ignore  # Convert slice_name data field to Tensor
 
         # Mask out "inactive" pred_labels as specified by ind_labels
         pred_labels = labels.clone()
-        pred_labels[~ind_labels.bool()] = -1
+        pred_labels[~ind_labels.bool()] = -1  # Mask out values where ind_labels is False
 
         ind_task_name = f"{base_task.name}_slice:{slice_name}_ind"
         pred_task_name = f"{base_task.name}_slice:{slice_name}_pred"
@@ -56,7 +58,9 @@ def add_slice_labels(
 
 
 def convert_to_slice_tasks(base_task: Task, slice_names: List[str]) -> List[Task]:
-    """Add slice labels to dataloader and creates new slice tasks (including base slice).
+    """  # Add slice labels to dataloader and creates new slice tasks (including base slice).
+
+    This function creates new slice tasks and modifies the base_task in place.
 
     Each slice will get two slice-specific heads:
     - an indicator head that learns to identify when DataPoints are in that slice
@@ -75,13 +79,12 @@ def convert_to_slice_tasks(base_task: Task, slice_names: List[str]) -> List[Task
     away in the model since they have the same name. We leave resolution of this issue
     for a future release.
 
-
     Parameters
     ----------
-    base_task
+    base_task:
         Task for which we are adding slice tasks. As noted in the WARNING, this task's
         module_pool will currently be modified in place for efficiency purposes.
-    slice_names
+    slice_names:
         List of slice names corresponding to the columns of the slice matrix.
 
     Returns
