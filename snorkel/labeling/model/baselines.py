@@ -1,27 +1,18 @@
-from typing import Any
+from typing import Any, Tuple
 
 import numpy as np
 
 from snorkel.labeling.model.base_labeler import BaseLabeler
 
-
 class RandomVoter(BaseLabeler):
-    """Random vote label model.
-
-    Example
-    -------
-    >>> L = np.array([[0, 0, -1], [-1, 0, 1], [1, -1, 0]])
-    >>> random_voter = RandomVoter()
-    >>> predictions = random_voter.predict_proba(L)
-    """
+    """Random vote label model."""
 
     def predict_proba(self, L: np.ndarray) -> np.ndarray:
-        """
-        Assign random votes to the data points.
+        """Assign random votes to the data points.
 
         Parameters
         ----------
-        L
+        L : np.ndarray
             An [n, m] matrix of labels
 
         Returns
@@ -40,20 +31,17 @@ class RandomVoter(BaseLabeler):
         Y_p /= Y_p.sum(axis=1).reshape(-1, 1)
         return Y_p
 
-
 class MajorityClassVoter(BaseLabeler):
     """Majority class label model."""
 
-    def fit(  # type: ignore
-        self, balance: np.ndarray, *args: Any, **kwargs: Any
-    ) -> None:
+    def fit(self, balance: np.ndarray, *args: Any, **kwargs: Any) -> None:
         """Train majority class model.
 
         Set class balance for majority class label model.
 
         Parameters
         ----------
-        balance
+        balance : np.ndarray
             A [k] array of class probabilities
         """
         self.balance = balance
@@ -64,10 +52,9 @@ class MajorityClassVoter(BaseLabeler):
         Assign majority class vote to each datapoint.
         In case of multiple majority classes, assign equal probabilities among them.
 
-
         Parameters
         ----------
-        L
+        L : np.ndarray
             An [n, m] matrix of labels
 
         Returns
@@ -86,13 +73,10 @@ class MajorityClassVoter(BaseLabeler):
                [1., 0.]])
         """
         n = L.shape[0]
+        max_class = np.argmax(self.balance)
         Y_p = np.zeros((n, self.cardinality))
-        max_classes = np.where(self.balance == max(self.balance))
-        for c in max_classes:
-            Y_p[:, c] = 1.0
-        Y_p /= Y_p.sum(axis=1).reshape(-1, 1)
+        Y_p[:, max_class] = 1
         return Y_p
-
 
 class MajorityLabelVoter(BaseLabeler):
     """Majority vote label model."""
@@ -105,7 +89,7 @@ class MajorityLabelVoter(BaseLabeler):
 
         Parameters
         ----------
-        L
+        L : np.ndarray
             An [n, m] matrix of labels
 
         Returns
@@ -125,10 +109,6 @@ class MajorityLabelVoter(BaseLabeler):
         n, m = L.shape
         Y_p = np.zeros((n, self.cardinality))
         for i in range(n):
-            counts = np.zeros(self.cardinality)
-            for j in range(m):
-                if L[i, j] != -1:
-                    counts[L[i, j]] += 1
-            Y_p[i, :] = np.where(counts == max(counts), 1, 0)
-        Y_p /= Y_p.sum(axis=1).reshape(-1, 1)
+            unique_labels, counts = np.unique(L[i, np.where(L[i] != -1)], return_counts=True)
+            Y_p[i, unique_labels] = counts / counts.sum()
         return Y_p
