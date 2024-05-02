@@ -1,1 +1,3 @@
-from snorkel.labeling.apply.spark import SparkLFApplier as SparkSFApplier  # noqa: F401
+from snorkel.labeling.functions import SparkLFApplier
+
+# Use the SparkLFApplier class in your code here.
