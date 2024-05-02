@@ -1,3 +1,41 @@
-# Note: we don't include PySpark in the normal required installs.
-# Installing a new version may overwrite your existing system install.
+# Specify the version of PySpark to use in the project.
+# Note: Installing a new version of PySpark may overwrite your existing system install.
 pyspark==3.4.1
+
+# Add the following lines to your `requirements.txt` file to install PySpark as a dependency.
+# This will ensure that PySpark is installed in a virtual environment and will not affect your system install.
+
+# [optional] If you are using pip version 19.0 or later, you can use the `--index-url` option to specify the PyPI repository to use.
+# This can be useful if you are behind a firewall or if you want to use a different PyPI repository.
+# For example:
+# --index-url https://artifactory.mycompany.com/artifactory/api/pypi/pypi-local/simple
+
+[tool.poetry]
+name = "my-project"
+version = "0.1.0"
+dependencies = [
+    "pyspark==3.4.1",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+
+curl -sSL https://install.python-poetry.org | python3 -
+
+
+
+poetry install
+
+
+
+source .venv/bin/activate
+
+
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
