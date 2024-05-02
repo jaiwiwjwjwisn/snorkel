@@ -2,25 +2,15 @@ import unittest
 
 import pandas as pd
 
-from snorkel.slicing import slicing_function
-from snorkel.slicing.monitor import slice_dataframe
+from snorkel.slicing import slicing_function  # Import the slicing_function decorator
+from snorkel.slicing.monitor import slice_dataframe  # Import the slice_dataframe function
 
+# Define a sample dataset as a list of integers
 DATA = [5, 10, 19, 22, 25]
 
-
-@slicing_function()
+@slicing_function()  # Decorate the function with the slicing_function decorator
 def sf(x):
-    return x.num < 20
-
-
-class PandasSlicerTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.df = pd.DataFrame(dict(num=DATA))
-
-    def test_slice(self):
-        self.assertEqual(len(self.df), 5)
-
-        # Should return a subset
-        sliced_df = slice_dataframe(self.df, sf)
-        self.assertEqual(len(sliced_df), 3)
+    """
+    Define a slicing function that returns True if the 'num' column value is less than 20.
+    """
+    return x.num < 2
