@@ -1,6 +1,6 @@
+# Define the major version number of the software
 _MAJOR = "0"
-_MINOR = "10"
-_REVISION = "1+dev"
 
-VERSION_SHORT = f"{_MAJOR}.{_MINOR}"
-VERSION = f"{_MAJOR}.{_MINOR}.{_REVISION}"
+# Define the minor version number of the software
+_MINOR = "10"
+
