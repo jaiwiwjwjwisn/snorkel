@@ -80,6 +80,11 @@ class LabelingFunction:
         preprocessor_str = f", Preprocessors: {self._pre}"
         return f"{type(self).__name__} {self.name}{preprocessor_str}"
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, LabelingFunction):
+            return False
+        return self.name == other.name and self._f == other._f and self._resources == other._resources and self._pre == other._pre
+
 
 class labeling_function:
     """Decorator to define a LabelingFunction object from a function.
@@ -110,6 +115,7 @@ class labeling_function:
     ...     return 0 if x.a > 42 else -1
     >>> g
     LabelingFunction my_lf, Preprocessors: []
+
     """
 
     def __init__(
@@ -118,8 +124,6 @@ class labeling_function:
         resources: Optional[Mapping[str, Any]] = None,
         pre: Optional[List[BasePreprocessor]] = None,
     ) -> None:
-        if callable(name):
-            raise ValueError("Looks like this decorator is missing parentheses!")
         self.name = name
         self.resources = resources
         self.pre = pre
