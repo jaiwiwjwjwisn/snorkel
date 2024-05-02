@@ -8,12 +8,26 @@ version: 2
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/conf.py
+  builder: html
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
-  version: 3.11
+  version: 3.9
   install:
-      - requirements: docs/requirements-doc.txt
-      - method: pip
-        path: .
+    - requirements: docs/requirements-doc.txt
+    - method: pip
+      path: .
   system_packages: true
+
+# Optionally set the path to the local copy of Sphinx if you want to use a specific version
+sphinx_version: '4.3.2'
+
+# Optionally configure additional settings
+# For example, to enable autoreload and web server that serves documentation while building
+# build_always: true
+# Travis CI example:
+#   - method: Travis
+#     project: <your_travis_project_slug>
+
+# Advanced options
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html#advanced-configuration-options
