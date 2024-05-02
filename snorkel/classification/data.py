@@ -6,10 +6,6 @@ from torch.utils.data import DataLoader, Dataset
 
 from .utils import list_to_tensor
 
-XDict = Dict[str, Any]
-YDict = Dict[str, Tensor]
-Batch = Tuple[XDict, YDict]
-
 # Default string names for initializing a DictDataset
 DEFAULT_INPUT_DATA_KEY = "input_data"
 DEFAULT_DATASET_NAME = "SnorkelDataset"
@@ -19,33 +15,29 @@ DEFAULT_TASK_NAME = "task"
 class DictDataset(Dataset):
     """A dataset where both the data fields and labels are stored in as dictionaries.
 
-    Parameters
-    ----------
-    name
-        The name of the dataset (e.g., this will be used to report metrics on a
-        per-dataset basis)
-    split
-        The name of the split that the data in this object represents
-    X_dict
-        A map from field name to values (e.g., {"tokens": ..., "uids": ...})
-    Y_dict
-        A map from task name to its corresponding set of labels
+    This class is initialized with a name, split, X_dict, and Y_dict. The name and split
+    are simple strings that describe the dataset and the split of the data, respectively.
+    X_dict is a dictionary where the keys are field names and the values are the data
+    corresponding to those field names. Y_dict is another dictionary where the keys are
+    task names and the values are the labels for those tasks.
 
     Raises
     ------
     ValueError
-        All values in the ``Y_dict`` must be of type torch.Tensor
+        If any value in the Y_dict is not a torch.Tensor.
 
     Attributes
     ----------
-    name
-        See above
-    split
-        See above
-    X_dict
-        See above
-    Y_dict
-        See above
+    name: str
+        The name of the dataset.
+    split: str
+        The name of the split of the data.
+    X_dict: Dict[str, Any]
+        A dictionary where the keys are field names and the values are the data
+        corresponding to those field names.
+    Y_dict: Dict[str, Tensor]
+        A dictionary where the keys are task names and the values are the labels for
+        those tasks.
     """
 
     def __init__(self, name: str, split: str, X_dict: XDict, Y_dict: YDict) -> None:
@@ -61,17 +53,39 @@ class DictDataset(Dataset):
                 )
 
     def __getitem__(self, index: int) -> Tuple[XDict, YDict]:
+        """Return the input data and labels at the given index.
+
+        Returns
+        -------
+        Tuple[XDict, YDict]
+            A tuple where the first element is a dictionary of input data and the
+            second element is a dictionary of labels.
+        """
         x_dict = {name: feature[index] for name, feature in self.X_dict.items()}
         y_dict = {name: label[index] for name, label in self.Y_dict.items()}
         return x_dict, y_dict
 
     def __len__(self) -> int:
+        """Return the number of examples in the dataset.
+
+        Returns
+        -------
+        int
+            The number of examples in the dataset.
+        """
         try:
             return len(next(iter(self.Y_dict.values())))  # type: ignore
         except StopIteration:
             return 0
 
     def __repr__(self) -> str:
+        """Return a string representation of the dataset.
+
+        Returns
+        -------
+        str
+            A string representation of the dataset.
+        """
         return (
             f"{type(self).__name__}"
             f"(name={self.name}, "
@@ -89,27 +103,28 @@ class DictDataset(Dataset):
         task_name: str = DEFAULT_TASK_NAME,
         dataset_name: str = DEFAULT_DATASET_NAME,
     ) -> "DictDataset":
-        """Initialize a ``DictDataset`` from PyTorch Tensors.
+        """Create a DictDataset from tensors.
 
         Parameters
         ----------
-        X_tensor
-            Input data of shape [num_examples, feature_dim]
-        Y_tensor
-            Labels of shape [num_samples, num_classes]
-        split
-            Name of data split corresponding to this dataset.
-        input_data_key
-            Name of data field to initialize in ``X_dict``
-        task_name
-            Name of task and corresponding label key in ``Y_dict``
-        dataset_name
-            Name of DictDataset to be initialized; See ``__init__`` above.
+        X_tensor : Tensor
+            The input data tensor.
+        Y_tensor : Tensor
+            The label tensor.
+        split : str
+            The name of the split of the data.
+        input_data_key : str, optional
+            The name of the input data key in the X_dict dictionary, by default
+            "input_data".
+        task_name : str, optional
+            The name of the task key in the Y_dict dictionary, by default "task".
+        dataset_name : str, optional
+            The name of the dataset, by default "SnorkelDataset".
 
         Returns
         -------
         DictDataset
-            Class initialized with single task and label corresponding to input data
+            A DictDataset initialized with the given tensors.
         """
         return cls(
             name=dataset_name,
@@ -124,13 +139,13 @@ def collate_dicts(batch: List[Batch]) -> Batch:
 
     Parameters
     ----------
-    batch
-        A list of (x_dict, y_dict) where the values of each are a single element
+    batch : List[Batch]
+        A list of (x_dict, y_dict) where the values of each are a single element.
 
     Returns
     -------
     Batch
-        A tuple of X_dict, Y_dict where the values of each are a merged list or tensor
+        A tuple of X_dict, Y_dict where the values of each are a merged list or tensor.
     """
     X_batch: Dict[str, Any] = defaultdict(list)
     Y_batch: Dict[str, Any] = defaultdict(list)
@@ -155,16 +170,18 @@ def collate_dicts(batch: List[Batch]) -> Batch:
 class DictDataLoader(DataLoader):
     """A DataLoader that uses the appropriate collate_fn for a ``DictDataset``.
 
+    This class is a subclass of DataLoader that uses the collate_dicts function to
+    combine the data from multiple examples into a single batch.
+
     Parameters
     ----------
-    dataset
-        A dataset to wrap
-    collate_fn
+    dataset : DictDataset
+        The dataset to wrap.
+    collate_fn : Callable[..., Any]
         The collate function to use when combining multiple indexed examples for a
-        single batch. Usually the default collate_dicts() method should be used, but
-        it can be overriden if you want to use different collate logic.
+        single batch.
     kwargs
-        Keyword arguments to pass on to DataLoader.__init__()
+        Keyword arguments to pass on to DataLoader.__init__().
     """
 
     def __init__(
