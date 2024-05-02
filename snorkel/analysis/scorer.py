@@ -10,17 +10,21 @@ from snorkel.analysis.metrics import METRICS, metric_score
 class Scorer:
     """Calculate one or more scores from user-specified and/or user-defined metrics.
 
+    This class calculates scores for a set of metrics, which can be either predefined
+    (in METRICS) or custom functions. The scores can be calculated for the overall set
+    of data points, or for specific slices (subsets) of the data.
+
     Parameters
     ----------
-    metrics
+    metrics: Optional[List[str]]
         A list of metric names, all of which are defined in METRICS
-    custom_metric_funcs
+    custom_metric_funcs: Optional[Mapping[str, Callable[..., float]]]
         An optional dictionary mapping the names of custom metrics to the functions
         that produce them. Each custom metric function should accept golds, preds, and
         probs as input (just like the standard metrics in METRICS) and return either a
         single score (float) or a dictionary of metric names to scores (if the function
-        calculates multiple values, for example). See the unit tests for an example.
-    abstain_label
+        calculates multiple values, for example).
+    abstain_label: Optional[int]
         The gold label for which examples will be ignored. By default, follow convention
         that abstains are -1.
 
@@ -31,7 +35,7 @@ class Scorer:
 
     Attributes
     ----------
-    metrics
+    metrics: Dict[str, Callable[..., float]]
         A dictionary mapping metric names to the corresponding functions for calculating
         that metric
     """
@@ -49,11 +53,14 @@ class Scorer:
                 if metric not in METRICS:
                     raise ValueError(f"Unrecognized metric: {metric}")
 
+                # Create a filter dictionary to ignore examples with the abstain_label
                 filter_dict = (
                     {}
                     if abstain_label is None or metric == "coverage"
                     else {"golds": [abstain_label], "preds": [abstain_label]}
                 )
+
+                # Create a partial function to apply the filter dictionary
                 self.metrics.update(
                     {
                         metric: partial(
@@ -75,13 +82,16 @@ class Scorer:
     ) -> Dict[str, float]:
         """Calculate scores for one or more user-specified metrics.
 
+        This method calculates scores for the specified metrics, given the gold,
+        prediction, and probability arrays.
+
         Parameters
         ----------
-        golds
+        golds: np.ndarray
             An array of gold (int) labels to base scores on
-        preds
+        preds: Optional[np.ndarray]
             An [n_datapoints,] or [n_datapoints, 1] array of (int) predictions to score
-        probs
+        probs: Optional[np.ndarray]
             An [n_datapoints, n_classes] array of probabilistic (float) predictions
 
         Because most metrics require either `preds` or `probs`, but not both, these
@@ -122,27 +132,31 @@ class Scorer:
     ) -> Union[Dict[str, Dict[str, float]], pd.DataFrame]:
         """Calculate user-specified and/or user-defined metrics overall + slices.
 
+        This method calculates scores for the specified metrics, for the overall set
+        of data points and for specific slices (subsets) of the data.
+
         Parameters
         ----------
-        S
+        S: np.recarray
             A recarray with entries of length n_examples corresponding to slice names
-        golds
+        golds: np.ndarray
             Gold (aka ground truth) labels (integers)
-        preds
+        preds: np.ndarray
             Predictions (integers)
-        probs:
+        probs: np.ndarray
             Probabilities (floats)
-        as_dataframe
-            A boolean indicating whether to return results as pandas ``DataFrame`` (True)
+        as_dataframe: bool
+            A boolean indicating whether to return results as pandas DataFrame (True)
             or dict (False)
 
         Returns
         -------
         Union[Dict, pd.DataFrame]
             A dictionary mapping slice_name to metric names to metric scores
-            or metrics formatted as pandas ``DataFrame``
+            or metrics formatted as pandas DataFrame
         """
 
+        # Check if the lengths of S, golds, preds, and probs match
         correct_shapes = S.shape[0] == len(golds) == len(preds) == len(probs)
         if not correct_shapes:
             raise ValueError(
