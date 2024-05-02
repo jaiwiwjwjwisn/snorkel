@@ -4,15 +4,15 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-
 from snorkel.analysis import Scorer
 from snorkel.utils import probs_to_preds
-
 
 class BaseLabeler(ABC):
     """Abstract baseline label voter class."""
 
-    def __init__(self, cardinality: int = 2, **kwargs: Any) -> None:
+    def __init__(self, cardinality: int = 2) -> None:
+        if not isinstance(cardinality, int):
+            raise TypeError("Cardinality must be an integer.")
         self.cardinality = cardinality
 
     @abstractmethod
@@ -22,7 +22,7 @@ class BaseLabeler(ABC):
         Parameters
         ----------
         L
-            An [n,m] matrix with values in {-1,0,1,...,k-1}f
+            An [n,m] matrix with values in {-1,0,1,...,k-1}
 
         Returns
         -------
@@ -66,6 +66,8 @@ class BaseLabeler(ABC):
             An [n,1] array of integer labels and an [n,k] array of probabilistic labels
         """
         Y_probs = self.predict_proba(L)
+        if not isinstance(Y_probs, np.ndarray):
+            raise TypeError("Probabilities must be a numpy array.")
         Y_p = probs_to_preds(Y_probs, tie_break_policy)
         if return_probs:
             return Y_p, Y_probs
@@ -75,7 +77,7 @@ class BaseLabeler(ABC):
         self,
         L: np.ndarray,
         Y: np.ndarray,
-        metrics: Optional[List[str]] = ["accuracy"],
+        metrics: List[str] = ["accuracy"],
         tie_break_policy: str = "abstain",
     ) -> Dict[str, float]:
         """Calculate one or more scores from user-specified and/or user-defined metrics.
@@ -106,6 +108,11 @@ class BaseLabeler(ABC):
             L, return_probs=True, tie_break_policy=tie_break_policy
         )
 
+        if not isinstance(metrics, list):
+            raise TypeError("Metrics must be a list.")
+        if not all(isinstance(metric, str) for metric in metrics):
+            raise TypeError("All metric names must be strings.")
+
         scorer = Scorer(metrics=metrics)
         results = scorer.score(Y, Y_pred, Y_prob)
         return results
@@ -122,9 +129,10 @@ class BaseLabeler(ABC):
         -------
         >>> label_model.save('./saved_label_model.pkl')  # doctest: +SKIP
         """
-        f = open(destination, "wb")
-        pickle.dump(self.__dict__, f)
-        f.close()
+        if not isinstance(destination, str):
+            raise TypeError("Destination must be a string.")
+        with open(destination, "wb") as f:
+            pickle.dump(self.__dict__, f)
 
     def load(self, source: str) -> None:
         """Load existing label model.
@@ -140,7 +148,8 @@ class BaseLabeler(ABC):
 
         >>> label_model.load('./saved_label_model.pkl')  # doctest: +SKIP
         """
-        f = open(source, "rb")
-        tmp_dict = pickle.load(f)
-        f.close()
+        if not isinstance(source, str):
+            raise TypeError("Source must be a string.")
+        with open(source, "rb") as f:
+            tmp_dict = pickle.load(f)
         self.__dict__.update(tmp_dict)
