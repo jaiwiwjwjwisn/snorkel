@@ -1,3 +1,4 @@
+import pathlib
 import shutil
 import tempfile
 import unittest
@@ -11,4 +12,8 @@ import torch.optim as optim
 
 from snorkel.labeling.model import LabelModel
 from snorkel.labeling.model.label_model import TrainConfig
+
+class TestLabelModel(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = pathlib.Path(tempfile.mkdtemp())
 
