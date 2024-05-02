@@ -5,7 +5,22 @@ import numpy as np
 
 
 def _hash(i: int) -> int:
-    """Deterministic hash function."""
+    """Deterministic hash function.
+
+    This function takes an integer 'i' and returns its deterministic hash value.
+    It converts the integer to a byte string, computes the SHA1 hash, and then
+    converts the resulting hexadecimal string back to an integer.
+
+    Parameters
+    ----------
+    i : int
+        The integer to be hashed.
+
+    Returns
+    -------
+    int
+        The deterministic hash value of the input integer.
+    """
     byte_string = str(i).encode("utf-8")
     return int(hashlib.sha1(byte_string).hexdigest(), 16)
 
@@ -15,34 +30,25 @@ def probs_to_preds(
 ) -> np.ndarray:
     """Convert an array of probabilistic labels into an array of predictions.
 
-    Policies to break ties include:
-    "abstain": return an abstain vote (-1)
-    "true-random": randomly choose among the tied options
-    "random": randomly choose among tied option using deterministic hash
-
-    NOTE: if tie_break_policy="true-random", repeated runs may have slightly different results due to difference in broken ties
+    This function takes an array of probabilistic labels and converts it into an
+    array of predictions based on the specified tie-break policy. If the probabilities
+    for all classes are below a certain tolerance 'tol', the function will break the
+    tie using the specified policy.
 
     Parameters
     ----------
-    prob
-        A [num_datapoints, num_classes] array of probabilistic labels such that each
-        row sums to 1.
-    tie_break_policy
-        Policy to break ties when converting probabilistic labels to predictions
-    tol
-        The minimum difference among probabilities to be considered a tie
+    probs : np.ndarray
+        A 2D array of probabilistic labels with shape [num_datapoints, num_classes].
+    tie_break_policy : str, optional
+        The policy to break ties when converting probabilistic labels to predictions.
+        Supported policies are "abstain", "true-random", and "random". Default is "random".
+    tol : float, optional
+        The minimum difference among probabilities to be considered a tie. Default is 1e-5.
 
     Returns
     -------
     np.ndarray
-        A [n] array of predictions (integers in [0, ..., num_classes - 1])
-
-    Examples
-    --------
-    >>> probs_to_preds(np.array([[0.5, 0.5, 0.5]]), tie_break_policy="abstain")
-    array([-1])
-    >>> probs_to_preds(np.array([[0.8, 0.1, 0.1]]))
-    array([0])
+        A 1D array of predictions (integers in [0, ..., num_classes - 1]) with shape [num_datapoints].
     """
     num_datapoints, num_classes = probs.shape
     if num_classes <= 1:
@@ -75,16 +81,21 @@ def probs_to_preds(
 def preds_to_probs(preds: np.ndarray, num_classes: int) -> np.ndarray:
     """Convert an array of predictions into an array of probabilistic labels.
 
+    This function takes an array of predictions and converts it into an array of
+    probabilistic labels with probability 1.0 in the column corresponding to the
+    prediction.
+
     Parameters
     ----------
-    pred
-        A [num_datapoints] or [num_datapoints, 1] array of predictions
+    preds : np.ndarray
+        A 1D array of predictions with shape [num_datapoints].
+    num_classes : int
+        The number of classes in the dataset.
 
     Returns
     -------
     np.ndarray
-        A [num_datapoints, num_classes] array of probabilistic labels with probability
-        of 1.0 in the column corresponding to the prediction
+        A 2D array of probabilistic labels with shape [num_datapoints, num_classes].
     """
     if np.any(preds < 0):
         raise ValueError("Could not convert abstained vote to probability")
@@ -94,21 +105,20 @@ def preds_to_probs(preds: np.ndarray, num_classes: int) -> np.ndarray:
 def to_int_label_array(X: np.ndarray, flatten_vector: bool = True) -> np.ndarray:
     """Convert an array to a (possibly flattened) array of ints.
 
-    Cast all values to ints and possibly flatten [n, 1] arrays to [n].
-    This method is typically used to sanitize labels before use with analysis tools or
-    metrics that expect 1D arrays as inputs.
+    This function takes an array and casts all values to integers. If the input is a
+    2D array with shape [n, 1], it flattens it to a 1D array with shape [n].
 
     Parameters
     ----------
-    X
-        An array to possibly flatten and possibly cast to int
-    flatten_vector
-        If True, flatten array into a 1D array
+    X : np.ndarray
+        An array to possibly flatten and possibly cast to int.
+    flatten_vector : bool, optional
+        If True, flatten array into a 1D array. Default is True.
 
     Returns
     -------
     np.ndarray
-        The converted array
+        The converted array.
 
     Raises
     ------
@@ -133,27 +143,21 @@ def filter_labels(
 ) -> Dict[str, np.ndarray]:
     """Filter out examples from arrays based on specified labels to filter.
 
-    The most common use of this method is to remove examples whose gold label is
-    unknown (marked with a -1) or examples whose predictions were abstains (also -1)
-    before calculating metrics.
-
-    NB: If an example matches the filter criteria for any label set, it will be removed
-    from all label sets (so that the returned arrays are of the same size and still
-    aligned).
+    This function takes a dictionary of label arrays and a dictionary of filters
+    and removes examples whose labels match the filter criteria for any label set.
 
     Parameters
     ----------
-    label_dict
-        A mapping from label set name to the array of labels
-        The arrays in a label_dict.values() are assumed to be aligned
-    filter_dict
+    label_dict : Dict[str, Optional[np.ndarray]]
+        A mapping from label set name to the array of labels.
+    filter_dict : Dict[str, List[int]]
         A mapping from label set name to the labels that should be filtered out for
-        that label set
+        that label set.
 
     Returns
     -------
     Dict[str, np.ndarray]
-        A mapping with the same keys as label_dict but with filtered arrays as values
+        A mapping with the same keys as label_dict but with filtered arrays as values.
 
     Example
     -------
@@ -185,17 +189,20 @@ def filter_labels(
 def _get_mask(label_array: np.ndarray, filter_values: List[int]) -> np.ndarray:
     """Return a boolean mask marking which labels are not in filter_values.
 
+    This function takes an array of labels and a list of values to filter out and
+    returns a boolean mask indicating which labels should be kept (1) or filtered (0).
+
     Parameters
     ----------
-    label_array
-        An array of labels
-    filter_values
-        A list of values that should be filtered out of the label array
+    label_array : np.ndarray
+        An array of labels.
+    filter_values : List[int]
+        A list of values that should be filtered out of the label array.
 
     Returns
     -------
     np.ndarray
-        A boolean mask indicating whether to keep (1) or filter (0) each example
+        A boolean mask indicating whether to keep (1) or filter (0) each example.
     """
     mask: np.ndarray = np.ones_like(label_array).astype(bool)
     for value in filter_values:
