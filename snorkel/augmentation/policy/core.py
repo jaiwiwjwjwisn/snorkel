@@ -9,11 +9,11 @@ class Policy:
 
     Parameters
     ----------
-    n_tfs
-        Total number of TFs
-    n_per_original
+    n_tfs : int
+        Total number of TFs (transformation functions)
+    n_per_original : int
         Number of transformed data points for each original data point
-    keep_original
+    keep_original : bool
         Keep untransformed data point in augmented data set? Note that
         even if in-place modifications are made to the original data
         point by the TFs being applied, the original data point will
@@ -26,17 +26,15 @@ class Policy:
 
     Attributes
     ----------
-    n
+    n : int
         Total number of TFs
-    n_per_original
-        See above
-    keep_original
-        See above
+    n_per_original : int
+        Number of transformed data points for each original data point
+    keep_original : bool
+        Keep untransformed data point in augmented data set?
     """
 
-    def __init__(
-        self, n_tfs: int, n_per_original: int = 1, keep_original: bool = True
-    ) -> None:
+    def __init__(self, n_tfs: int, n_per_original: int = 1, keep_original: bool = True) -> None:
         self.n = n_tfs
         self.n_per_original = n_per_original
         self.keep_original = keep_original
@@ -84,11 +82,11 @@ class ApplyAllPolicy(Policy):
 
     Parameters
     ----------
-    n_tfs
+    n_tfs : int
         Total number of TFs
-    n_per_original
+    n_per_original : int
         Number of transformed data points for each original data point
-    keep_original
+    keep_original : bool
         Keep untransformed data point in augmented data set? Note that
         even if in-place modifications are made to the original data
         point by the TFs being applied, the original data point will
@@ -102,12 +100,12 @@ class ApplyAllPolicy(Policy):
 
     Attributes
     ----------
-    n
+    n : int
         Total number of TFs
-    n_per_original
-        See above
-    keep_original
-        See above
+    n_per_original : int
+        Number of transformed data points for each original data point
+    keep_original : bool
+        Keep untransformed data point in augmented data set?
     """
 
     def generate(self) -> List[int]:
@@ -133,14 +131,14 @@ class ApplyOnePolicy(ApplyAllPolicy):
 class ApplyEachPolicy(Policy):
     """Apply each TF individually to each data point.
 
-    This can be used as a baseline policy when using
+    This can be used as a baseline policy, when using
     complex transformations which might degenerate if combined.
 
     Parameters
     ----------
-    n_tfs
+    n_tfs : int
         Total number of TFs
-    keep_original
+    keep_original : bool
         Keep untransformed data point in augmented data set? Note that
         even if in-place modifications are made to the original data
         point by the TFs being applied, the original data point will
@@ -154,12 +152,12 @@ class ApplyEachPolicy(Policy):
 
     Attributes
     ----------
-    n
+    n : int
         Total number of TFs
-    n_per_original
+    n_per_original : int
         Total number of TFs
-    keep_original
-        See above
+    keep_original : bool
+        Keep untransformed data point in augmented data set?
     """
 
     def __init__(self, n_tfs: int, keep_original: bool = True) -> None:
