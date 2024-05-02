@@ -1,13 +1,9 @@
 import numpy as np
 import pandas as pd
-
 from snorkel.slicing import PandasSFApplier
 from snorkel.slicing.sf import SlicingFunction
 
-
-def slice_dataframe(
-    df: pd.DataFrame, slicing_function: SlicingFunction
-) -> pd.DataFrame:
+def slice_dataframe(df: pd.DataFrame, slicing_function: SlicingFunction) -> pd.DataFrame:
     """Return a dataframe with examples corresponding to specified ``SlicingFunction``.
 
     Parameters
@@ -23,9 +19,11 @@ def slice_dataframe(
     pd.DataFrame
         A DataFrame including only examples belonging to slice_name
     """
+    sf_applier = PandasSFApplier([slicing_function])
+    sf_labels = sf_applier.apply(df)
 
-    S = PandasSFApplier([slicing_function]).apply(df)
+    # Get the index of rows where the slicing_function output is True
+    row_indices = sf_labels[slicing_function.name].index[sf_labels[slicing_function.name]].tolist()
 
-    # Index into the SF labels by name
-    df_idx = np.where(S[slicing_function.name])[0]  # type: ignore
-    return df.iloc[df_idx]
+    # Return the sliced dataframe
+    return df.iloc[row_indices]
