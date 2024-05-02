@@ -1,14 +1,14 @@
 import glob
 import logging
 import os
-from shutil import copyfile
-from typing import Any, Dict, Iterable, List, Optional, Set
+import shutil
+from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
+import torch
 from snorkel.classification.multitask_classifier import MultitaskClassifier
 from snorkel.types import Config
 
 Metrics = Dict[str, float]
-
 
 class CheckpointerConfig(Config):
     """Manager for checkpointing model.
@@ -42,7 +42,6 @@ class CheckpointerConfig(Config):
     checkpoint_runway: int = 0
     checkpoint_clear: bool = True
 
-
 class Checkpointer:
     """Manager for checkpointing model.
 
@@ -59,7 +58,10 @@ class Checkpointer:
     """
 
     def __init__(
-        self, counter_unit: str, evaluation_freq: float, **kwargs: Any
+        self,
+        counter_unit: str,
+        evaluation_freq: float,
+        **kwargs: Any
     ) -> None:
         self.config = CheckpointerConfig(**kwargs)  # type: ignore
         self._validate_config()
@@ -105,7 +107,10 @@ class Checkpointer:
         self.best_metric_dict: Dict[str, float] = {}
 
     def checkpoint(
-        self, iteration: float, model: MultitaskClassifier, metric_dict: Metrics
+        self,
+        iteration: float,
+        model: MultitaskClassifier,
+        metric_dict: Metrics
     ) -> None:
         """Check if iteration and current metrics necessitate a checkpoint.
 
@@ -119,6 +124,11 @@ class Checkpointer:
             Current performance metrics for model
         """
         # Check if the checkpoint_runway condition is met
+        if not isinstance(iteration, (int, float)):
+            raise TypeError(
+                f"Invalid iteration type {type(iteration)}, "
+                f"must be int or float."
+            )
         if iteration < self.checkpoint_runway:
             return
         elif not self.checkpoint_condition_met and iteration >= self.checkpoint_runway:
@@ -176,42 +186,80 @@ class Checkpointer:
 
     def clear(self) -> None:
         """Clear existing checkpoint files, besides the best-yet model."""
-        if self.checkpoint_clear:
-            logging.info("Clear all checkpoints other than best so far.")
-            file_list = glob.glob(f"{self.checkpoint_dir}/checkpoint_*.pth")
-            for fname in file_list:
-                os.remove(fname)
+        if not self.checkpoint_clear:
+            return
+
+        logging.info("Clear all checkpoints other than best so far.")
+        file_list = glob.glob(f"{self.checkpoint_dir}/checkpoint_*.pth")
+        for fname in file_list:
+            if not os.path.exists(fname):
+                continue
+            os.remove(fname)
 
     def load_best_model(self, model: MultitaskClassifier) -> MultitaskClassifier:
-        """Load the best model from the checkpoint."""
+        """Load the best model from the checkpoint.
+
+        Returns
+        -------
+        model
+            The loaded model
+        """
         metric = list(self.checkpoint_metric.keys())[0]
         if metric not in self.best_metric_dict:  # pragma: no cover
             logging.info("No best model found, use the original model.")
-        else:
-            # Load the best model of checkpoint_metric
-            best_model_path = (
-                f"{self.checkpoint_dir}/best_model_{metric.replace('/', '_')}.pth"
+            return model
+
+        # Load the best model of checkpoint_metric
+        best_model_path = (
+            f"{self.checkpoint_dir}/best_model_{metric.replace('/', '_')}.pth"
+        )
+        if not os.path.exists(best_model_path):
+            raise FileNotFoundError(
+                f"Best model path {best_model_path} does not exist."
             )
-            logging.info(f"Loading the best model from {best_model_path}.")
-            model.load(best_model_path)
+
+        logging.info(f"Loading the best model from {best_model_path}.")
+        model.load(best_model_path)
 
         return model
 
     def _validate_config(self) -> None:
+        if self.checkpoint_runway < 0:
+            raise ValueError(
+                f"Invalid checkpoint_runway {self.config.checkpoint_runway}, "
+                f"must be greater than or equal to 0."
+            )
+
+        if self.checkpoint_factor <= 0:
+            raise ValueError(
+                f"Invalid checkpoint_factor {self.config.checkpoint_factor}, "
+                f"must be greater than 0."
+            )
+
         split_checkpoint_metric = self.config.checkpoint_metric.split("/")
         if len(split_checkpoint_metric) != 4:
             raise ValueError(
                 "checkpoint_metric must be formatted 'task/dataset/split/metric:mode'."
             )
 
-        if self.config.checkpoint_runway < 0:
-            raise ValueError(
-                f"Invalid checkpoint_runway {self.config.checkpoint_runway}, "
-                f"must be greater than or equal to 0."
-            )
+        if self.config.checkpoint_task_metrics is not None:
+            for metric_mode in self.config.checkpoint_task_metrics:
+                try:
+                    metric, mode = metric_mode.split(":")
+                except ValueError:
+                    raise ValueError(
+                        f"Metric must be of the form 'metric_name:mode' where mode is "
+                        f"'max' or 'min'. Instead, got {metric_mode}"
+                    )
+                if mode not in ["min", "max"]:
+                    raise ValueError(
+                        f"Unrecognized checkpoint metric mode {mode} for metric {metric}, "
+                        f"must be 'min' or 'max'."
+                    )
 
     def _make_metric_map(
-        self, metric_mode_iter: Optional[Iterable[str]]
+        self,
+        metric_mode_iter: Optional[Iterable[str]]
     ) -> Dict[str, str]:
         if metric_mode_iter is None:
             return {}
