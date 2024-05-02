@@ -1,6 +1,5 @@
 import unittest
-from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, Dict, Any, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ import pandas as pd
 from snorkel.analysis import Scorer
 from snorkel.slicing import SFApplier, slicing_function
 from snorkel.utils import preds_to_probs
-
 
 class ScorerTest(unittest.TestCase):
     def _get_labels(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -18,7 +16,7 @@ class ScorerTest(unittest.TestCase):
         return golds, preds, probs
 
     def test_scorer(self) -> None:
-        def pred_sum(golds, preds, probs):
+        def pred_sum(golds: np.ndarray, preds: np.ndarray, probs: np.ndarray) -> float:
             return np.sum(preds)
 
         scorer = Scorer(
@@ -27,16 +25,16 @@ class ScorerTest(unittest.TestCase):
 
         results = scorer.score(*self._get_labels())
         results_expected = dict(accuracy=0.6, f1=2 / 3, pred_sum=3)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
     def test_dict_metric(self) -> None:
-        def dict_metric(golds, preds, probs):
+        def dict_metric(golds: np.ndarray, preds: np.ndarray, probs: np.ndarray) -> Dict[str, Any]:
             return dict(a=1, b=2)
 
         scorer = Scorer(custom_metric_funcs=dict(dict_metric=dict_metric))
         results = scorer.score(*self._get_labels())
         results_expected = dict(a=1, b=2)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
     def test_invalid_metric(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unrecognized metric"):
@@ -66,30 +64,30 @@ class ScorerTest(unittest.TestCase):
         scorer = Scorer(metrics=["accuracy"], abstain_label=None)
         results = scorer.score(golds, preds, probs)
         results_expected = dict(accuracy=0.6)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
         # Test abstain=-1 for gold
         scorer = Scorer(metrics=["accuracy"], abstain_label=-1)
         results = scorer.score(golds, preds, probs)
         results_expected = dict(accuracy=0.75)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
         # Test abstain=-1 for preds and gold
         abstain_preds = np.array([-1, -1, 1, 1, 0])
         results = scorer.score(golds, abstain_preds)
         results_expected = dict(accuracy=0.5)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
         scorer = Scorer(metrics=["coverage"], abstain_label=-1)
         results = scorer.score(golds, abstain_preds)
         results_expected = dict(coverage=0.6)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
         # Test abstain set to different value
         scorer = Scorer(metrics=["accuracy"], abstain_label=10)
         results = scorer.score(golds, preds, probs)
         results_expected = dict(accuracy=0.6)
-        self.assertEqual(results, results_expected)
+        self.assertDictEqual(results, results_expected)
 
     def test_score_slices(self):
         DATA = [5, 10, 19, 22, 25]
@@ -111,20 +109,20 @@ class ScorerTest(unittest.TestCase):
 
         # Test normal score
         metrics = scorer.score(golds=golds, preds=preds, probs=probs)
-        self.assertEqual(metrics["accuracy"], 0.6)
+        self.assertDictEqual(metrics, dict(accuracy=0.6))
 
         # Test score_slices
         slice_metrics = scorer.score_slices(S=S, golds=golds, preds=preds, probs=probs)
-        self.assertEqual(slice_metrics["overall"]["accuracy"], 0.6)
-        self.assertEqual(slice_metrics["sf"]["accuracy"], 2.0 / 3.0)
+        self.assertDictEqual(slice_metrics["overall"], dict(accuracy=0.6))
+        self.assertDictEqual(slice_metrics["sf"], dict(accuracy=2.0 / 3.0))
 
         # Test as_dataframe=True
         metrics_df = scorer.score_slices(
             S=S, golds=golds, preds=preds, probs=probs, as_dataframe=True
         )
         self.assertTrue(isinstance(metrics_df, pd.DataFrame))
-        self.assertEqual(metrics_df["accuracy"]["overall"], 0.6)
-        self.assertEqual(metrics_df["accuracy"]["sf"], 2.0 / 3.0)
+        self.assertDictEqual(metrics_df.loc["overall"].to_dict(), dict(accuracy=0.6))
+        self.assertDictEqual(metrics_df.loc["sf"].to_dict(), dict(accuracy=2.0 / 3.0))
 
         # Test wrong shapes
         with self.assertRaisesRegex(
@@ -133,7 +131,6 @@ class ScorerTest(unittest.TestCase):
             scorer.score_slices(
                 S=S, golds=golds[:1], preds=preds, probs=probs, as_dataframe=True
             )
-
 
 if __name__ == "__main__":
     unittest.main()
