@@ -1,11 +1,10 @@
 import random
-import unittest
-
 import numpy as np
 import pandas as pd
-import pytest
 import torch
+from unittest import TestCase
 
+import pytest
 from snorkel.labeling import LabelingFunction, PandasLFApplier, labeling_function
 from snorkel.labeling.model import LabelModel
 from snorkel.preprocess import preprocessor
@@ -54,7 +53,7 @@ def f(x: DataPoint, divisor: int) -> int:
     return 0 if x.x0 % divisor == 1 and x.x1 > x.x3 else -1
 
 
-class LabelingConvergenceTest(unittest.TestCase):
+class TestLabelingConvergence(TestCase):
     @classmethod
     def setUpClass(cls):
         # Ensure deterministic runs
@@ -69,7 +68,7 @@ class LabelingConvergenceTest(unittest.TestCase):
         cls.df_train = create_data(cls.N_TRAIN)
 
     @pytest.mark.complex
-    def test_labeling_convergence(self) -> None:
+    def test_labeling_convergence(self):
         """Test convergence of end to end labeling pipeline."""
         # Apply LFs
         labeling_functions = (
@@ -92,4 +91,4 @@ class LabelingConvergenceTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
