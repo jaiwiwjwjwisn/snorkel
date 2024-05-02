@@ -115,8 +115,8 @@ class SoftCrossEntropyTest(unittest.TestCase):
             .numpy()
         )
         # Do hard and soft ce loss still match when we use class weights?
-        self.assertAlmostEqual(ce_loss3, ces_loss3, places=3)
+        self.assertAlmostEqual(ces_loss3, ce_loss3, places=3)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
