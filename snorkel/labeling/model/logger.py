@@ -76,4 +76,13 @@ class Logger:
         if score_strings["valid"]:
             valid_scores = f"{', '.join(score_strings['valid'])}"
             string += f" VALID:[{valid_scores}]"
-        logging.info(string)
+
+        if score_strings["train"] or score_strings["valid"]:
+            logging.info(string)
+        elif score_strings:
+            logging.warning(string)
+        else:
+            logging.debug(string)
+
+    def __str__(self) -> str:
+        return f"Logger(log_freq={self.log_freq}, unit_count={self.unit_count})"
