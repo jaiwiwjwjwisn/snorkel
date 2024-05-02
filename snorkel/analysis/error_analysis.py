@@ -7,7 +7,7 @@ import numpy as np
 from snorkel.utils import to_int_label_array
 
 
-def get_label_buckets(*y: np.ndarray) -> Dict[Tuple[int, ...], np.ndarray]:
+def get_label_buckets(*y: List[np.ndarray]) -> Dict[Tuple[int, ...], np.ndarray]:
     """Return data point indices bucketed by label combinations.
 
     Parameters
@@ -49,17 +49,29 @@ def get_label_buckets(*y: np.ndarray) -> Dict[Tuple[int, ...], np.ndarray]:
     >>> buckets[(0, -1)]  # abstained negatives
     array([3])
     """
+    if len(y) == 0:
+        raise ValueError("At least one label list is required")
+    if len(set(map(len, y))) != 1:
+        raise ValueError("All label lists must have the same number of elements")
+    x = y[0]
+    if len(x) == 0:
+        return {}
+    if len(set(x)) < len(x):
+        y = [to_int_label_array(z, flatten_vector=True) for z in y]
     buckets: DefaultDict[Tuple[int, int], List[int]] = defaultdict(list)
-    y_flat = list(map(lambda x: to_int_label_array(x, flatten_vector=True), y))
-    if len(set(map(len, y_flat))) != 1:
-        raise ValueError("Arrays must all have the same number of elements")
-    for i, labels in enumerate(zip(*y_flat)):
+    for i, labels in enumerate(zip(*y)):
+        if len(labels) != len(x):
+            raise ValueError(
+                "Number of rows in x does not match number of elements in at least one label list"
+            )
         buckets[labels].append(i)
+    if len(buckets) == 0:
+        return {}
     return {k: np.array(v) for k, v in buckets.items()}
 
 
 def get_label_instances(
-    bucket: Tuple[int, ...], x: np.ndarray, *y: np.ndarray
+    bucket: Tuple[int, ...], x: np.ndarray, *y: List[np.ndarray]
 ) -> np.ndarray:
     """Return instances in x with the specified combination of labels.
 
@@ -101,6 +113,10 @@ def get_label_instances(
     y1 had label i, y2 had label j, and so on. Note that ``x`` and ``y``
     must all be the same length.
     """
+    if len(y) == 0:
+        raise ValueError("At least one label list is required")
+    if len(bucket) == 0:
+        return np.array([])
     if len(y) != len(bucket):
         raise ValueError("Number of lists must match the amount of labels in bucket")
     if x.shape[0] != len(y[0]):
@@ -112,7 +128,6 @@ def get_label_instances(
     try:
         indices = buckets[bucket]
     except KeyError:
-        logging.warning("Bucket" + str(bucket) + " does not exist.")
         return np.array([])
     instances = x[indices]
     return instances
