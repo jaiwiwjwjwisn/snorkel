@@ -2,11 +2,11 @@ from typing import Tuple
 
 import numpy as np
 
-
 def generate_simple_label_matrix(
     n: int, m: int, cardinality: int, abstain_multiplier: float = 1.0
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Generate a synthetic label matrix with true parameters and labels.
+    """
+    Generate a synthetic label matrix with true parameters and labels.
 
     This function generates a set of labeling function conditional probability tables,
     P(LF=l | Y=y), stored as a matrix P, and true labels Y, and then generates the
@@ -14,14 +14,17 @@ def generate_simple_label_matrix(
 
     Parameters
     ----------
-    n
-        Number of data points
-    m
-        Number of labeling functions
-    cardinality
-        Cardinality of true labels (i.e. not including abstains)
-    abstain_multiplier
-        Factor to multiply the probability of abstaining by
+    n: int
+        Number of data points.
+
+    m: int
+        Number of labeling functions.
+
+    cardinality: int
+        Cardinality of true labels (i.e. not including abstains).
+
+    abstain_multiplier: float
+        Factor to multiply the probability of abstaining by. Default is 1.0.
 
     Returns
     -------
