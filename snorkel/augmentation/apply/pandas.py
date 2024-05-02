@@ -1,9 +1,9 @@
-from typing import List
+from typing import List  # Importing List from typing module
 
-import pandas as pd
-from tqdm import tqdm
+import pandas as pd  # Importing pandas library as pd
+from tqdm import tqdm  # Importing tqdm module
 
-from .core import BaseTFApplier
+from .core import BaseTFApplier  # Importing BaseTFApplier from core module
 
 
 class PandasTFApplier(BaseTFApplier):
@@ -36,13 +36,13 @@ class PandasTFApplier(BaseTFApplier):
         pd.DataFrame
             Pandas DataFrame of data points in augmented data set
         """
-        batch_transformed: List[pd.Series] = []
+        batch_transformed: List[pd.Series] = []  # Initialize an empty list to store transformed batches
         for i, (_, x) in enumerate(df.iterrows()):
             batch_transformed.extend(self._apply_policy_to_data_point(x))
             if (i + 1) % batch_size == 0:
-                yield pd.concat(batch_transformed, axis=1).T.infer_objects()
-                batch_transformed = []
-        yield pd.concat(batch_transformed, axis=1).T.infer_objects()
+                yield pd.concat(batch_transformed, axis=1).T.infer_objects()  # Yield transformed batch
+                batch_transformed = []  # Reset batch_transformed list
+        yield pd.concat(batch_transformed, axis=1).T.infer_objects()  # Yield remaining transformed data points
 
     def apply(self, df: pd.DataFrame, progress_bar: bool = True) -> pd.DataFrame:
         """Augment a Pandas DataFrame of data points using TFs and policy.
@@ -59,7 +59,7 @@ class PandasTFApplier(BaseTFApplier):
         pd.DataFrame
             Pandas DataFrame of data points in augmented data set
         """
-        x_transformed: List[pd.Series] = []
+        x_transformed: List[pd.Series] = []  # Initialize an empty list to store transformed data points
         for _, x in tqdm(df.iterrows(), total=len(df), disable=(not progress_bar)):
             x_transformed.extend(self._apply_policy_to_data_point(x))
-        return pd.concat(x_transformed, axis=1).T.infer_objects()
+        return pd.concat(x_transformed, axis=1).T.infer_objects()  # Return transformed data points as DataFrame
