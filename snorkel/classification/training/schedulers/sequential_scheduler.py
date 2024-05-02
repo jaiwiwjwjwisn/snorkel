@@ -6,18 +6,29 @@ from .scheduler import BatchIterator, Scheduler
 
 
 class SequentialScheduler(Scheduler):
-    """Return batches from all dataloaders in sequential order."""
+    """
+    A class representing a scheduler that returns batches from all dataloaders
+    in sequential order.
+
+    Inherits from the Scheduler class and overrides the get_batches method.
+    """
 
     def __init__(self) -> None:
+        """
+        Initialize the SequentialScheduler object.
+
+        Calls the constructor of the superclass.
+        """
         super().__init__()
 
     def get_batches(self, dataloaders: Sequence[DictDataLoader]) -> BatchIterator:
-        """Return batches from dataloaders sequentially in the order they were given.
+        """
+        Return batches from dataloaders sequentially in the order they were given.
 
         Parameters
         ----------
-        dataloaders
-            A sequence of dataloaders to get batches from
+        dataloaders : Sequence[DictDataLoader]
+            A sequence of dataloaders to get batches from.
 
         Yields
         ------
@@ -28,5 +39,7 @@ class SequentialScheduler(Scheduler):
             metadata to know what to do with the batch it has been given.
         """
         for dataloader in dataloaders:
+            # Iterate through each dataloader in the given sequence
             for batch in dataloader:
-                yield batch, dataloader
+                # Iterate through each batch in the current dataloader
+                yield batch, dataloader  # Yield the batch and the current dataloader
